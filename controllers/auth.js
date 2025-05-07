@@ -49,21 +49,55 @@ const createUser = async(req, res = response) => {
         res.status(500).json({
             ok: false,
             msg: 'Por favor hable con el administrador'
-        })
+        });
     }
     
 }
 
-const loginUser = (req, res = response) => {
+const loginUser = async (req, res = response) => {
     
     const { email, password } = req.body;
 
-    res.status(200).json({
-        ok: true,
-        msg: 'login',
-        email,
-        password
-    })
+    try {
+
+        const user = await User.findOne({ email }); // Buscamos si el usuario ya existe en BD
+        // Si el usuario no existe, devolvemos un error 400
+        
+        if ( !user ) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'El usuario no existe con ese email'
+            });
+        }
+
+        // Validar o confimar las contraseñas 
+        // Si el usuario existe, comparamos la contraseña ingresada con la contraseña encriptada en la BD
+        const validPassword = bcrypt.compareSync( password, user.password ); // Comparamos la contraseña ingresada con la contraseña encriptada en la BD
+        // Si la contraseña no es valida, devolvemos un error 400
+        if ( !validPassword ) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'Password incorrecto'
+            });        
+        }
+
+        //TODO: Generar el JWT ( JSON Web Token ) para el usuario
+
+        res.json({
+            ok: true,
+            uid: user.id,
+            name: user.name
+        })
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        });
+    }
+
+
 }
 
 const revalidateToken = (req, res = response) => {
