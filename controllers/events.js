@@ -1,4 +1,5 @@
 const { response } = require('express');
+const Event = require('../models/Event'); // Importar el modelo del evento
 
 const getEvents = ( req, res = response ) => {
 
@@ -8,15 +9,31 @@ const getEvents = ( req, res = response ) => {
     })
 }
 
-const createEvent = ( req, res = response ) => {
+const createEvent = async ( req, res = response ) => {
 
     // verificar que tenga el evento
-    console.log(req.body);
+    const event = new Event( req.body );
 
-    res.json({
-        ok: true,
-        msg: 'crateEvent',
-    })
+    // grabar en la base de datos 
+    try {
+
+       event.user = req.uid; // uid del usuario que crea el evento
+        
+       const eventSaved = await event.save();
+
+       res.json({
+            ok: true,
+            event : eventSaved
+       });
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Hable con el administrador'
+        });
+    }
+    
 }
 
 
