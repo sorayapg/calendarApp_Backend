@@ -5,7 +5,7 @@ const EvenSchema = Schema({
 
     title: {
         type: String,
-        require: true
+        required: true
     },
 
     notes: {
@@ -14,21 +14,26 @@ const EvenSchema = Schema({
 
     start: {
         type: Date,
-        require: true
+        required: true
     },
 
     end: {
         type: Date,
-        require: true
+        required: true
     },
 
     user: {
         type: Schema.Types.ObjectId,
-        ref: 'User'
-    }
+        ref: 'User',
+        required: true
+    } 
+});
 
-
-    
+// personalizar el modelo solo para mostrar lo que queremos 
+EvenSchema.method('toJSON', function() {
+    const { __v, _id, ...object } = this.toObject();
+    object.id = _id;
+    return object;
 })
 
 module.exports = model('Event', EvenSchema );
