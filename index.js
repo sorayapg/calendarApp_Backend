@@ -23,14 +23,18 @@ app.use( express.json() );
 // Rutas 
 app.use('/api/auth', require('./routes/auth') );
 
+// Ruta de prueba para la raíz
+app.get('/', (req, res) => {
+  res.send('Backend de Calendar App corriendo correctamente 🚀');
+});
+
 // CRUD: eventos
 app.use('/api/events', require('./routes/events') );
-
-
 
 // Escuchar peticiones
 
 app.listen(process.env.PORT, () => {
     console.log(`Servidor escuchando en el puerto ${ process.env.PORT}`);
+
 });
 
