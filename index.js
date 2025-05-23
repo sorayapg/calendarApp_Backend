@@ -39,8 +39,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
 
-// app.listen(process.env.PORT, () => {
-//     console.log(`Servidor escuchando en el puerto ${ process.env.PORT}`);
 
-// });
 
