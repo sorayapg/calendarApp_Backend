@@ -3,8 +3,6 @@ const bcrypt = require('bcryptjs'); // Importamos bcrypt para encritar la contra
 const User = require('../models/User'); // Importamos el modelo de usuario
 const { generateJWT } = require('../helpers/jwt');// Importamos la funcion para generar el JWT
 
-
-
 const createUser = async(req, res = response) => {
     const { email, password } = req.body;
 
@@ -43,7 +41,7 @@ const createUser = async(req, res = response) => {
 
         const token = await generateJWT( user.id, user.name ); // generamos el token con el id y el nombre del usuario
 
-    
+        // Devolvemos el usuario creado y el token generado
         res.status(201).json({
             ok: true,
             uid: user.id,
