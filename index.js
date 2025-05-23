@@ -33,8 +33,14 @@ app.use('/api/events', require('./routes/events') );
 
 // Escuchar peticiones
 
-app.listen(process.env.PORT, () => {
-    console.log(`Servidor escuchando en el puerto ${ process.env.PORT}`);
+const PORT = process.env.PORT || 4000;
 
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
+
+// app.listen(process.env.PORT, () => {
+//     console.log(`Servidor escuchando en el puerto ${ process.env.PORT}`);
+
+// });
 
