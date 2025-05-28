@@ -4,6 +4,7 @@ const User = require('../models/User'); // Importamos el modelo de usuario
 const { generateJWT } = require('../helpers/jwt');// Importamos la funcion para generar el JWT
 
 const createUser = async(req, res = response) => {
+    console.log('Body recibido:', req.body);
     const { email, password } = req.body;
 
     // Validar si el usuario ya exite en la BD
