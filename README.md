@@ -17,7 +17,7 @@ Su función principal es manejar usuarios, iniciar sesión mediante **JWT**, y g
 - Validación de usuarios
 - API REST modular
 - Conexión con MongoDB Atlas
-- Despliegue en Railway
+- Despliegue en Render
 
 ---
 
@@ -33,7 +33,7 @@ Su función principal es manejar usuarios, iniciar sesión mediante **JWT**, y g
 | **bcryptjs** | Encriptación de contraseñas |
 | **dotenv** | Configuración de variables de entorno |
 | **CORS** | Control de acceso entre dominios |
-| **Railway** | Plataforma de despliegue en la nube |
+| **Render** | Plataforma de despliegue en la nube |
 
 ---
 
@@ -44,21 +44,39 @@ Antes de comenzar, asegúrate de tener:
 - 🟢 **Node.js 18+**
 - 🟢 **npm** (gestor de paquetes)
 - 🟢 **Cuenta en MongoDB Atlas**
-- 🟢 **Cuenta en Railway** (para despliegue en la nube)
+- 🟢 **Cuenta en Render** (para despliegue en la nube)
 
 ---
 
-## 🧩 4. Configuración de variables de entorno
+## ☁️ 4. Despliegue en Render (producción)
 
-Crea un archivo `.env` en la raíz del proyecto (puedes copiar el contenido de `.env.template`):
+El backend está desplegado en Render mediante integración con GitHub.
 
-```
-PORT=4000
-DB_CNN=mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/mern_calendar
-SECRET_JWT_SEED=<clave-secreta-jwt>
-CORS_ORIGIN=http://localhost:5173
+### ⚡ Despliegue automático
 
-```
+- El servicio está conectado al repositorio de GitHub
+- Cada push a la rama `main` dispara un nuevo deploy automático
+
+### 🔧 Variables de entorno en Render
+
+Configurar en el panel de Render:
+
+- DB_CNN → URI de MongoDB Atlas
+- SECRET_JWT_SEED → clave secreta para JWT
+
+### 🌐 URL pública
+
+https://calendarapp-backend-fes0.onrender.com
+
+### 🔗 Base API
+
+https://calendarapp-backend-fes0.onrender.com/api
+
+### 🧠 Nota importante
+
+El servicio utiliza el plan gratuito de Render, por lo que puede entrar en reposo tras inactividad.
+
+La primera petición puede tardar unos segundos.
 
 
 
@@ -74,14 +92,21 @@ npm install
 # 3️⃣ Verifica que todo funcione en local
 npm start
 
+## 🌐 Configuración CORS
+
+Para permitir el acceso desde el frontend en producción:
+CORS_ORIGIN=https://sorayapg.github.io
 
 
-## ⚙️ 6. Despliegue en Railway (producción)
+En desarrollo:
+CORS_ORIGIN=http://localhost:5173
+
+## ⚙️ 6. Despliegue en Render (producción)
 
 ### ⚡ Despliegue automático desde GitHub
 
-Railway ya está vinculado al repositorio.  
-Cada vez que hagas un push en la rama principal (`main`), Railway desplegará automáticamente una nueva versión.
+Render ya está vinculado al repositorio.  
+Cada vez que hagas un push en la rama principal (`main`), Render desplegará automáticamente una nueva versión.
 
 
 # 1️⃣ Entra en la carpeta del backend
@@ -96,38 +121,54 @@ git add .
 git commit -m "Actualización del backend - nueva versión"
 git push origin main
 
-* Railway detectará el nuevo commit y ejecutará el despliegue.
+* Render detectará el nuevo commit y ejecutará el despliegue.
 * Puedes seguir el proceso en el panel: Deployments → View Logs
 
 
-## ⚙️ Despliegue manual con Railway CLI
+## ⚙️ Despliegue manual con Render CLI
 
 # Instalar CLI (una sola vez)
-npm install -g @railway/cli
+npm install -g @Render/cli
 
 # Iniciar sesión
-railway login
+Render login
 
-# Vincular el proyecto local al de Railway
-railway link
+# Vincular el proyecto local al de Render
+Render link
 
 # Desplegar cambios
-railway up
+Render up
 
 #🔗 URL pública del backend:
-# https://calendar-app-backend-pro.up.railway.app
+# https://calendarapp-backend-fes0.onrender.com
 
 
-## 🧰 7. Comandos útiles de Railway CLI
+## 🧰 7. Comandos útiles de Render CLI
 
 | Acción                     | Comando                                   |
 | -----------------------    |:----------------------------------------  |    
-| Ver estado del servicio    |  railway status                           |    
-| Ver logs en tiempo real    |  railway logs                             |
-| Abrir el panel web         |  railway open                             |
-| Ver variables de entorno   |  railway variables                        |
-| Modificar variable         |  railway variables set NOMBRE=valor       |
+| Ver estado del servicio    |  Render status                           |    
+| Ver logs en tiempo real    |  Render logs                             |
+| Abrir el panel web         |  Render open                             |
+| Ver variables de entorno   |  Render variables                        |
+| Modificar variable         |  Render variables set NOMBRE=valor       |
 
+## 🔗 Integración Full Stack
+
+Este backend está conectado con el frontend desplegado en GitHub Pages:
+
+Frontend:
+https://sorayapg.github.io/calendarApp/
+
+Tecnologías combinadas:
+
+- React (Frontend)
+- Node.js + Express (Backend)
+- MongoDB Atlas (Base de datos)
+- JWT (Autenticación)
+- GitHub Pages + Render (Deploy)
+
+Proyecto completo desplegado en producción.
 
 
 ## 🧩 8. Endpoints principales
@@ -160,7 +201,7 @@ app.get('/api/health', (req, res) => {
 | -----------------------    |:----------------------------------------   |------------------------------------------------|   
 |500 Internal Server Error   |  Conexión fallida a MongoDB                |  Verifica DB_CNN y la IP permitida en Atlas    |
 |bcrypt error 
-(invalid ELF header)         |  Entorno Railway sin binarios nativos      |  Usa bcryptjs                                  |
+(invalid ELF header)         |  Entorno Render sin binarios nativos      |  Usa bcryptjs                                  |
 | CORS bloqueado             |  Origen del frontend no permitido          |  Añade el dominio en CORS_ORIGIN               |
 | JWT inválido o expirado    |  Token incorrecto o caducado               |  Revisa el header Authorization                |
 
