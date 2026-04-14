@@ -3,8 +3,8 @@ const Event = require('../models/Event'); // Importar el modelo del evento
 
 const getEvents = async ( req, res = response ) => {
 
-    //Obtener el listado de todos los eventos
-    const events = await Event.find()
+    //Obtener el listado de eventos del usuario autenticado
+    const events = await Event.find({ user: req.uid })
                               .populate('user', 'name') // para obtener el nombre del usuario que creo el evento
                                 
     res.json({
