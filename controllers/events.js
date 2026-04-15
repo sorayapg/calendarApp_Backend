@@ -3,14 +3,23 @@ const Event = require('../models/Event'); // Importar el modelo del evento
 
 const getEvents = async ( req, res = response ) => {
 
-    //Obtener el listado de eventos del usuario autenticado
-    const events = await Event.find({ user: req.uid })
-                              .populate('user', 'name') // para obtener el nombre del usuario que creo el evento
+    try {
+        //Obtener el listado de eventos del usuario autenticado
+        const events = await Event.find({ user: req.uid })
+                                  .populate('user', 'name');
                                 
-    res.json({
-        ok: true,
-        events
-    })
+        res.json({
+            ok: true,
+            events
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Hable con el administrador'
+        });
+    }
 }
 
 const createEvent = async ( req, res = response ) => {
@@ -138,7 +147,6 @@ const deleteEvent = async ( req, res = response ) => {
             msg: 'Hable con el administrador'
         }); 
     }
-    const event = Event.findById( eventId );
 }
 
 module.exports = {

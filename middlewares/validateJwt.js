@@ -24,6 +24,8 @@ const validateJWT = ( req, res = response, next ) => {
 
         req.uid = uid; // guarda el uid que se estrae de la respuesta del token
         req.name = name; // guarda el name que se extrae de la respuesta del token
+
+        next();
         
     } catch (error) {
         // Si el token no es válido o ha expirado, devolvemos un error 401, con un mensaje de error
@@ -32,8 +34,6 @@ const validateJWT = ( req, res = response, next ) => {
             msg: 'Token no válido'
         });
     }
-
-    next();
 
 }
 
