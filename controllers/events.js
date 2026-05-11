@@ -1,13 +1,15 @@
 const { response } = require('express');
-const Event = require('../models/Event'); // Importar el modelo del evento
+const prisma = require('../database/prisma');
 
 const getEvents = async ( req, res = response ) => {
 
     try {
-        //Obtener el listado de eventos del usuario autenticado
-        const events = await Event.find({ user: req.uid })
-                                  .populate('user', 'name');
-                                
+        // Obtener solo los eventos del usuario autenticado
+        const events = await prisma.event.findMany({
+            where: { userId: Number(req.uid) },
+            include: { user: { select: { id: true, name: true } } }
+        });
+
         res.json({
             ok: true,
             events
@@ -24,20 +26,25 @@ const getEvents = async ( req, res = response ) => {
 
 const createEvent = async ( req, res = response ) => {
 
-    // verificar que tenga el evento
-    const event = new Event( req.body );
+    const { title, notes, start, end } = req.body;
 
-    // grabar en la base de datos 
     try {
 
-       event.user = req.uid; // uid del usuario que crea el evento
-        
-       const eventSaved = await event.save();
+        const event = await prisma.event.create({
+            data: {
+                title,
+                notes,
+                start: new Date(start),
+                end:   new Date(end),
+                userId: Number(req.uid)
+            },
+            include: { user: { select: { id: true, name: true } } }
+        });
 
-       res.json({
+        res.json({
             ok: true,
-            event : eventSaved
-       });
+            event
+        });
         
     } catch (error) {
         console.log(error);
@@ -49,48 +56,48 @@ const createEvent = async ( req, res = response ) => {
     
 }
 
-
 const updateEvent = async ( req, res = response ) => {
 
-    const eventId = req.params.id; // obtenemos el id del evento
-    const uid = req.uid; // obtenemos el uid del usuario que quiere actualizar el evento
+    const eventId = Number(req.params.id);
+    const uid     = Number(req.uid);
 
     try {
 
         // Verificar que el evento existe
-        const event = await Event.findById( eventId );
+        const event = await prisma.event.findUnique({ where: { id: eventId } });
+
         if ( !event ) {
             return res.status(404).json({
                 ok: false,
                 msg: 'Evento no encontrado por ese id'
             });
         }
-        /**
-         * Verificar que el usuario que quiere actualizar el evento es el mismo que lo creo,
-         * si no es el mismo, no podrá actualizar ya que no esta autorizado 
-         */
 
-        if ( event.user.toString() !== uid ) {
+        // Verificar que el usuario es el propietario
+        if ( event.userId !== uid ) {
             return res.status(401).json({
                 ok: false,
                 msg: 'No tiene privilegios para editar este evento'
             });
         }
 
-        // Crear un nuevo objeto con los datos que se van actualizar
-        const newEvent = {
-            ...req.body,
-            user: uid // El usuario que actualiza el evento
-        }
+        const { title, notes, start, end } = req.body;
 
-        // Actualizar el evento
-        const eventUpdated = await Event.findByIdAndUpdate( eventId, newEvent, { new: true } );
+        const eventUpdated = await prisma.event.update({
+            where: { id: eventId },
+            data: {
+                title,
+                notes,
+                start: new Date(start),
+                end:   new Date(end)
+            },
+            include: { user: { select: { id: true, name: true } } }
+        });
+
         res.json({
             ok: true,
             event: eventUpdated
         });
-
-
         
     } catch (error) {
         console.log(error);
@@ -99,42 +106,34 @@ const updateEvent = async ( req, res = response ) => {
             msg: 'Hable con el administrador'
         });        
     }
-
-    
 }
-
 
 const deleteEvent = async ( req, res = response ) => {
     
-    const eventId = req.params.id // obtenemos el id del evento
-    const uid = req.uid; // Obtenemos el uid del usuario que quiere eliminar el evento
-    
+    const eventId = Number(req.params.id);
+    const uid     = Number(req.uid);
 
     try {
 
-        // verificar que el evento existe
-        const event = await Event.findById( eventId );
+        // Verificar que el evento existe
+        const event = await prisma.event.findUnique({ where: { id: eventId } });
+
         if ( !event ) {
-            return res. status(404).json({
+            return res.status(404).json({
                 ok: false,
                 msg: 'Evento no encontrado por ese id'
             });        
         }
 
-        /**
-         * verificar que el usuario que quiere eliminar el evento es el mismo que lo creo,
-         * si no es el mismo, no podrá eliminar ya que no esta autorizado
-         */
-
-        if ( event.user.toString() !== uid ) {
+        // Verificar que el usuario es el propietario
+        if ( event.userId !== uid ) {
             return res.status(401).json({
                 ok: false,
-                msg: 'No tiene privilegios para eliminaar este evento'
+                msg: 'No tiene privilegios para eliminar este evento'
             });
         }
 
-        // Eliminar el evento 
-        await Event.findByIdAndDelete( eventId); 
+        await prisma.event.delete({ where: { id: eventId } });
         
         res.json({
             ok: true

@@ -1,54 +1,41 @@
 const { response } = require('express');
-const bcrypt = require('bcryptjs'); // Importamos bcrypt para encritar la contraseña
-const User = require('../models/User'); // Importamos el modelo de usuario
-const { generateJWT } = require('../helpers/jwt');// Importamos la funcion para generar el JWT
+const bcrypt = require('bcryptjs');
+const prisma = require('../database/prisma');
+const { generateJWT } = require('../helpers/jwt');
 
 const createUser = async(req, res = response) => {
-    console.log('Body recibido:', req.body);
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
-    // Validar si el usuario ya exite en la BD
     try {
 
-        let user = await User.findOne({ email }); // Buscamos si el usuario ya existe en BD
-        // Si el usuario exste, devolvemos un error 400
-        
-        if ( user ) {
+        // Verificar si el usuario ya existe en PostgreSQL
+        const existingUser = await prisma.user.findUnique({ where: { email } });
+
+        if ( existingUser ) {
             return res.status(400).json({
                 ok: false,
                 msg: 'El usuario ya existe con ese email'
             });
         }
 
-        /**
-         * Creamos una nueva instancia del modelo User con los datos del cuerpo de la solicitud 
-         * si el usuario no existe en la base de datos , es decir, si no se encontró un usuario con el mismno email.
-         * Entonces, se crea un nuevo usuario 
-         * */
-        user = new User( req.body );
-        
-        // Encriptamos la contraseña del usuario con bcrypt 
-        const salt = bcrypt.genSaltSync(); // Generamos un salt para encriptar la contraseña
-        user.password = bcrypt.hashSync( password, salt ); // Encriptamos la contraseña con el salt generado 
+        // Encriptar contraseña
+        const salt = bcrypt.genSaltSync();
+        const hashedPassword = bcrypt.hashSync( password, salt );
 
-        /**
-         * Guardamos el usuario en la BD
-         * El método save() se utiliza para guardar el documento en la BD
-         * 
-         */
-        await user.save();
+        // Crear usuario en PostgreSQL
+        const user = await prisma.user.create({
+            data: { name, email, password: hashedPassword }
+        });
 
-        // Generar JWT
+        // Generar JWT con el id (Int) y el nombre
+        const token = await generateJWT( user.id, user.name );
 
-        const token = await generateJWT( user.id, user.name ); // generamos el token con el id y el nombre del usuario
-
-        // Devolvemos el usuario creado y el token generado
         res.status(201).json({
             ok: true,
             uid: user.id,
             name: user.name,
-            token // Devolvemos el token generado
-        })
+            token
+        });
         
     } catch (error) {
         console.log(error);
@@ -66,9 +53,9 @@ const loginUser = async (req, res = response) => {
 
     try {
 
-        const user = await User.findOne({ email }); // Buscamos si el usuario ya existe en BD
-        // Si el usuario no existe, devolvemos un error 400
-        
+        // Buscar usuario en PostgreSQL
+        const user = await prisma.user.findUnique({ where: { email } });
+
         if ( !user ) {
             return res.status(400).json({
                 ok: false,
@@ -76,10 +63,9 @@ const loginUser = async (req, res = response) => {
             });
         }
 
-        // Validar o confimar las contraseñas 
-        // Si el usuario existe, comparamos la contraseña ingresada con la contraseña encriptada en la BD
-        const validPassword = bcrypt.compareSync( password, user.password ); // Comparamos la contraseña ingresada con la contraseña encriptada en la BD
-        // Si la contraseña no es valida, devolvemos un error 400
+        // Verificar contraseña
+        const validPassword = bcrypt.compareSync( password, user.password );
+
         if ( !validPassword ) {
             return res.status(400).json({
                 ok: false,
@@ -87,19 +73,15 @@ const loginUser = async (req, res = response) => {
             });        
         }
 
-        //Generar el JWT ( JSON Web Token ) para el usuario
-
         // Generar JWT
-
-        const token = await generateJWT( user.id, user.name ); // generamos el token con el id y el nombre del usuario
+        const token = await generateJWT( user.id, user.name );
 
         res.json({
             ok: true,
             uid: user.id,
             name: user.name,
-            token // Devolvemos el token generado
-
-        })
+            token
+        });
         
     } catch (error) {
         console.log(error);
@@ -109,16 +91,17 @@ const loginUser = async (req, res = response) => {
         });
     }
 
-
 }
 
 const revalidateToken = async (req, res = response) => {
 
-    const { uid, name } = req; // uid es el string del ObjectId, asignado por validateJWT
+    const { uid, name } = req;
 
     try {
-        // Verificar que el usuario sigue existiendo en BD
-        const user = await User.findById( uid );
+        // Verificar que el usuario sigue existiendo en PostgreSQL
+        // Number() convierte el uid del JWT (puede llegar como string) a entero
+        const user = await prisma.user.findUnique({ where: { id: Number(uid) } });
+
         if ( !user ) {
             return res.status(401).json({
                 ok: false,
@@ -126,7 +109,7 @@ const revalidateToken = async (req, res = response) => {
             });
         }
 
-        // Generar un nuevo token
+        // Generar nuevo token
         const token = await generateJWT( uid, name );
 
         res.json({
