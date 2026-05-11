@@ -114,20 +114,35 @@ const loginUser = async (req, res = response) => {
 
 const revalidateToken = async (req, res = response) => {
 
-    const { uid, name } = req; // Extraemos el uid y el name y Obtenemos el uid y el name del usuario del token
-   
+    const { uid, name } = req; // uid es el string del ObjectId, asignado por validateJWT
 
+    try {
+        // Verificar que el usuario sigue existiendo en BD
+        const user = await User.findById( uid );
+        if ( !user ) {
+            return res.status(401).json({
+                ok: false,
+                msg: 'Usuario no encontrado'
+            });
+        }
 
-    // Generar un nuevo token 
-    const token = await generateJWT( uid.id, name ); // generamos el token con el id y el nombre del usuario
-    // Devolvemos el nuevo token y el uid y name del usuario
-    
-    res.json({
-        ok: true,
-        uid,
-        name,
-        token
-    })
+        // Generar un nuevo token
+        const token = await generateJWT( uid, name );
+
+        res.json({
+            ok: true,
+            uid,
+            name,
+            token
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor hable con el administrador'
+        });
+    }
 }
 
 
