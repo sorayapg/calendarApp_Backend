@@ -1,13 +1,14 @@
 const { response } = require('express');
 const prisma = require('../database/prisma');
 
+// Obtener todos los eventos del usuario autenticado
+// Filtra por userId para garantizar que cada usuario solo accede a sus propios datos
 const getEvents = async ( req, res = response ) => {
 
     try {
-        // Obtener solo los eventos del usuario autenticado
         const events = await prisma.event.findMany({
             where: { userId: Number(req.uid) },
-            include: { user: { select: { id: true, name: true } } }
+            include: { user: { select: { id: true, name: true } } } // incluye datos del propietario
         });
 
         res.json({
@@ -24,6 +25,7 @@ const getEvents = async ( req, res = response ) => {
     }
 }
 
+// Crear un nuevo evento en PostgreSQL asociado al usuario autenticado
 const createEvent = async ( req, res = response ) => {
 
     const { title, notes, start, end } = req.body;
@@ -34,9 +36,9 @@ const createEvent = async ( req, res = response ) => {
             data: {
                 title,
                 notes,
-                start: new Date(start),
+                start: new Date(start),  // convierte string ISO a Date para PostgreSQL
                 end:   new Date(end),
-                userId: Number(req.uid)
+                userId: Number(req.uid)   // asocia el evento al usuario autenticado
             },
             include: { user: { select: { id: true, name: true } } }
         });
@@ -56,6 +58,7 @@ const createEvent = async ( req, res = response ) => {
     
 }
 
+// Actualizar un evento existente, solo si el usuario autenticado es el propietario
 const updateEvent = async ( req, res = response ) => {
 
     const eventId = Number(req.params.id);
@@ -63,7 +66,7 @@ const updateEvent = async ( req, res = response ) => {
 
     try {
 
-        // Verificar que el evento existe
+        // Verificar que el evento existe en la base de datos
         const event = await prisma.event.findUnique({ where: { id: eventId } });
 
         if ( !event ) {
@@ -73,7 +76,7 @@ const updateEvent = async ( req, res = response ) => {
             });
         }
 
-        // Verificar que el usuario es el propietario
+        // Control de autorización: solo el propietario puede modificar su evento
         if ( event.userId !== uid ) {
             return res.status(401).json({
                 ok: false,
@@ -83,6 +86,7 @@ const updateEvent = async ( req, res = response ) => {
 
         const { title, notes, start, end } = req.body;
 
+        // Actualizar el evento en PostgreSQL mediante Prisma
         const eventUpdated = await prisma.event.update({
             where: { id: eventId },
             data: {
@@ -108,6 +112,7 @@ const updateEvent = async ( req, res = response ) => {
     }
 }
 
+// Eliminar un evento, solo si el usuario autenticado es el propietario
 const deleteEvent = async ( req, res = response ) => {
     
     const eventId = Number(req.params.id);
@@ -115,7 +120,7 @@ const deleteEvent = async ( req, res = response ) => {
 
     try {
 
-        // Verificar que el evento existe
+        // Verificar que el evento existe antes de intentar eliminarlo
         const event = await prisma.event.findUnique({ where: { id: eventId } });
 
         if ( !event ) {
@@ -125,7 +130,7 @@ const deleteEvent = async ( req, res = response ) => {
             });        
         }
 
-        // Verificar que el usuario es el propietario
+        // Control de autorización: solo el propietario puede eliminar su evento
         if ( event.userId !== uid ) {
             return res.status(401).json({
                 ok: false,
